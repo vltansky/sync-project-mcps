@@ -1,24 +1,17 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { homedir } from "node:os";
 import type { ClientConfig, McpConfig } from "../types.js";
 
-function getGlobalConfigPath(): string {
-  return join(homedir(), ".codeium/windsurf/mcp_config.json");
-}
+const CONFIG_PATH = ".windsurf/mcp.json";
 
 export function getWindsurfConfig(projectRoot: string): ClientConfig {
-  const projectPath = join(projectRoot, ".windsurf/mcp.json");
-  const globalPath = getGlobalConfigPath();
-
-  // Prefer project-level config, fall back to global
-  const configPath = existsSync(projectPath) ? projectPath : globalPath;
+  const configPath = join(projectRoot, CONFIG_PATH);
   const exists = existsSync(configPath);
 
   if (!exists) {
     return {
       name: "Windsurf",
-      path: projectPath, // Default to project path for creation
+      path: configPath,
       config: null,
       exists: false,
     };

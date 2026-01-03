@@ -5,7 +5,7 @@
 One command. All your project MCP servers. Every editor.
 
 ```bash
-npx -y sync-project-mcps
+npx -y sync-project-mcps@latest
 ```
 
 ---
@@ -37,19 +37,19 @@ You use multiple AI coding assistants - Cursor, Claude Code, Windsurf, Cline. Ea
 ### Run Once (npx)
 
 ```bash
-npx -y sync-project-mcps
+npx -y sync-project-mcps@latest
 ```
 
 ### Preview Changes
 
 ```bash
-npx -y sync-project-mcps --dry-run
+npx -y sync-project-mcps@latest --dry-run
 ```
 
 ### Verbose Output
 
 ```bash
-npx -y sync-project-mcps -v
+npx -y sync-project-mcps@latest -v
 ```
 
 ---
@@ -73,7 +73,7 @@ npx -y sync-project-mcps -v
 No installation needed:
 
 ```bash
-npx -y sync-project-mcps
+npx -y sync-project-mcps@latest
 ```
 
 ### Option 2: Install Globally
@@ -130,7 +130,7 @@ Or add to project-level `.mcp.json`:
 ### Then Sync
 
 ```bash
-npx -y sync-project-mcps
+npx -y sync-project-mcps@latest
 ```
 
 Your MCP server is now available in **all** your AI coding assistants.
@@ -144,7 +144,7 @@ Your MCP server is now available in **all** your AI coding assistants.
 3. **Writes** the unified config to every client location
 
 ```
-$ npx -y sync-project-mcps
+$ npx -y sync-project-mcps@latest
 
 Sync MCP Configurations
 

@@ -1,39 +1,17 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { homedir } from "node:os";
 import type { ClientConfig, McpConfig } from "../types.js";
 
-function getGlobalConfigPath(): string {
-  const platform = process.platform;
-  if (platform === "darwin") {
-    return join(
-      homedir(),
-      "Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json"
-    );
-  } else if (platform === "win32") {
-    return join(
-      process.env.APPDATA || "",
-      "Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json"
-    );
-  }
-  return join(
-    homedir(),
-    ".config/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json"
-  );
-}
+const CONFIG_PATH = ".cline/mcp.json";
 
 export function getClineConfig(projectRoot: string): ClientConfig {
-  const projectPath = join(projectRoot, ".cline/mcp.json");
-  const globalPath = getGlobalConfigPath();
-
-  // Prefer project-level config, fall back to global
-  const configPath = existsSync(projectPath) ? projectPath : globalPath;
+  const configPath = join(projectRoot, CONFIG_PATH);
   const exists = existsSync(configPath);
 
   if (!exists) {
     return {
       name: "Cline",
-      path: projectPath,
+      path: configPath,
       config: null,
       exists: false,
     };
