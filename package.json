@@ -1,6 +1,6 @@
 {
   "name": "sync-project-mcps",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Sync project-level MCP configurations across AI coding assistants (Cursor, Claude Code, Windsurf, Cline)",
   "type": "module",
   "bin": {

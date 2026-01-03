@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
-import { dirname } from "node:path";
+import { writeFileSync } from "node:fs";
 import { parseArgs } from "node:util";
 import { getCursorConfig } from "./clients/cursor.js";
 import { getClaudeCodeConfig } from "./clients/claude-code.js";
@@ -117,7 +116,7 @@ function run() {
   }
 
   if (missingClients.length > 0 && verbose) {
-    console.log(c("dim", "\nNot found (will be created):"));
+    console.log(c("dim", "\nNot found (skipped):"));
     for (const client of missingClients) {
       console.log(c("dim", `  - ${client.name}`));
     }
@@ -133,7 +132,7 @@ function run() {
 
   console.log(`\n${c("cyan", "Syncing to clients...")}`);
 
-  for (const client of clients) {
+  for (const client of existingClients) {
     const changes = getChanges(client, merged);
     const parts: string[] = [];
 
@@ -145,9 +144,8 @@ function run() {
     }
 
     const changeInfo = parts.length > 0 ? ` (${parts.join(", ")})` : c("dim", " (no changes)");
-    const status = client.exists ? c("green", "update") : c("yellow", "create");
 
-    console.log(`  [${status}] ${client.name}${changeInfo}`);
+    console.log(`  [${c("green", "sync")}] ${client.name}${changeInfo}`);
 
     if (verbose && changes.added.length > 0) {
       for (const name of changes.added) {
@@ -156,10 +154,6 @@ function run() {
     }
 
     if (!dryRun) {
-      const dir = dirname(client.path);
-      if (!existsSync(dir)) {
-        mkdirSync(dir, { recursive: true });
-      }
       writeFileSync(client.path, JSON.stringify(merged, null, 2) + "\n");
     }
   }
