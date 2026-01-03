@@ -1,0 +1,21 @@
+{
+  "name": "sync-project-mcps",
+  "version": "1.0.0",
+  "description": "Sync project-level MCP configurations across AI coding assistants (Cursor, Claude Code, Windsurf, Cline)",
+  "type": "module",
+  "bin": {
+    "sync-project-mcps": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js"
+  },
+  "keywords": ["mcp", "cursor", "claude", "sync", "cli", "windsurf", "cline", "project"],
+  "author": "Vlad Tansky",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  }
+}
