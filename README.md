@@ -61,8 +61,11 @@ npx -y sync-project-mcps@latest -v
 | **Cursor** | `.cursor/mcp.json` | Project |
 | **Claude Code** | `.mcp.json` | Project |
 | **Windsurf** | `.windsurf/mcp.json` | Project |
-| **Cline** | VS Code globalStorage | Global |
+| **Cline** | `.cline/mcp.json` | Project |
 | **Roo Code** | `.roo/mcp.json` | Project |
+| **Gemini CLI** | `.gemini/settings.json` | Project |
+| **Codex** | `.codex/config.toml` | Project |
+| **OpenCode** | `.opencode/opencode.jsonc` | Project |
 
 ---
 
@@ -176,11 +179,26 @@ Done!
 sync-project-mcps [options]
 
 Options:
+  -s, --source  Use specific client as source of truth (cursor, claude, windsurf, cline, roo, gemini, codex, opencode)
   --dry-run     Show what would be synced without writing files
   -v, --verbose Show detailed information about each server
   -h, --help    Show help message
   --version     Show version
 ```
+
+### Source Mode
+
+By default, the tool **merges** all configs (add-only). Use `--source` to pick one client as the source of truth:
+
+```bash
+# Use Cursor's config as the canonical source
+npx -y sync-project-mcps@latest -s cursor
+
+# Preview what would be removed
+npx -y sync-project-mcps@latest -s cursor --dry-run -v
+```
+
+This will sync **only** the servers from the source client to all others, removing servers that don't exist in the source.
 
 ---
 
@@ -188,7 +206,7 @@ Options:
 
 ### Does it delete servers?
 
-No. It only adds missing servers. If a server exists in Cursor but not Claude Code, it gets added to Claude Code. Servers are never removed.
+By default, no. It only adds missing servers. Use `--source` to sync from a specific client, which will also remove servers that don't exist in the source.
 
 ### What if the same server has different configs?
 

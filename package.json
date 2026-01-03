@@ -1,7 +1,7 @@
 {
   "name": "sync-project-mcps",
-  "version": "1.0.3",
-  "description": "Sync project-level MCP configurations across AI coding assistants (Cursor, Claude Code, Windsurf, Cline)",
+  "version": "1.2.0",
+  "description": "Sync project-level MCP configurations across AI coding assistants (Cursor, Claude Code, Windsurf, Cline, Gemini CLI, Codex, OpenCode)",
   "type": "module",
   "bin": {
     "sync-project-mcps": "./dist/index.js"
@@ -10,10 +10,12 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc",
+    "clean": "rm -rf dist",
+    "build": "npm run clean && tsc",
     "dev": "tsc --watch",
     "start": "node dist/index.js",
-    "prepublishOnly": "npm run build"
+    "test": "node --test --experimental-strip-types src/**/*.test.ts",
+    "prepublishOnly": "npm run build && npm test"
   },
   "keywords": ["mcp", "cursor", "claude", "sync", "cli", "windsurf", "cline", "project"],
   "author": "Vlad Tansky",

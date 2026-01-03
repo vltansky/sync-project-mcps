@@ -1,14 +1,17 @@
 #!/usr/bin/env node
 
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { parseArgs } from "node:util";
 import { getCursorConfig } from "./clients/cursor.js";
 import { getClaudeCodeConfig } from "./clients/claude-code.js";
 import { getWindsurfConfig } from "./clients/windsurf.js";
 import { getClineConfig } from "./clients/cline.js";
 import { getRooCodeConfig } from "./clients/roo-code.js";
+import { getGeminiConfig } from "./clients/gemini.js";
+import { getCodexConfig, serializeCodexConfig } from "./clients/codex.js";
+import { getOpenCodeConfig, serializeOpenCodeConfig } from "./clients/opencode.js";
 import { mergeConfigs, getChanges } from "./merge.js";
-import type { ClientConfig } from "./types.js";
+import type { ClientConfig, McpConfig } from "./types.js";
 
 const COLORS = {
   reset: "\x1b[0m",
@@ -25,12 +28,27 @@ function c(color: keyof typeof COLORS, text: string): string {
   return `${COLORS[color]}${text}${COLORS.reset}`;
 }
 
+const CLIENT_ALIASES: Record<string, string> = {
+  cursor: "Cursor",
+  claude: "Claude Code",
+  "claude-code": "Claude Code",
+  windsurf: "Windsurf",
+  cline: "Cline",
+  roo: "Roo Code",
+  "roo-code": "Roo Code",
+  gemini: "Gemini CLI",
+  "gemini-cli": "Gemini CLI",
+  codex: "Codex",
+  opencode: "OpenCode",
+};
+
 const { values: args } = parseArgs({
   options: {
     "dry-run": { type: "boolean", default: false },
     verbose: { type: "boolean", short: "v", default: false },
     help: { type: "boolean", short: "h", default: false },
     version: { type: "boolean", default: false },
+    source: { type: "string", short: "s" },
   },
 });
 
@@ -42,6 +60,7 @@ ${c("bold", "USAGE")}
   npx sync-project-mcps [options]
 
 ${c("bold", "OPTIONS")}
+  -s, --source  Use specific client as source of truth (cursor, claude, windsurf, cline, roo, gemini, codex, opencode)
   --dry-run     Show what would be synced without writing files
   -v, --verbose Show detailed information
   -h, --help    Show this help message
@@ -53,10 +72,14 @@ ${c("bold", "SUPPORTED CLIENTS")}
   - Windsurf    ${c("dim", ".windsurf/mcp.json")}
   - Cline       ${c("dim", ".cline/mcp.json")}
   - Roo Code    ${c("dim", ".roo/mcp.json")}
+  - Gemini CLI  ${c("dim", ".gemini/settings.json")}
+  - Codex       ${c("dim", ".codex/config.toml")}
+  - OpenCode    ${c("dim", ".opencode/opencode.jsonc")}
 
 ${c("bold", "EXAMPLES")}
-  npx sync-project-mcps              Sync all MCP configurations
-  npx sync-project-mcps --dry-run    Preview changes without writing
+  npx sync-project-mcps                    Merge all configs (add-only)
+  npx sync-project-mcps -s cursor          Use Cursor as source of truth
+  npx sync-project-mcps -s cursor --dry-run Preview changes
 `);
 }
 
@@ -74,8 +97,20 @@ function run() {
   const projectRoot = process.cwd();
   const dryRun = args["dry-run"];
   const verbose = args.verbose;
+  const sourceArg = args.source?.toLowerCase();
+  const sourceName = sourceArg ? CLIENT_ALIASES[sourceArg] : null;
+
+  if (sourceArg && !sourceName) {
+    console.error(c("red", `Unknown source: ${sourceArg}`));
+    console.error(`Valid sources: ${Object.keys(CLIENT_ALIASES).join(", ")}`);
+    process.exit(1);
+  }
 
   console.log(c("bold", "\nSync MCP Configurations\n"));
+
+  if (sourceName) {
+    console.log(c("cyan", `Source: ${sourceName}\n`));
+  }
 
   if (dryRun) {
     console.log(c("yellow", "DRY RUN - no files will be modified\n"));
@@ -87,6 +122,9 @@ function run() {
     getWindsurfConfig(projectRoot),
     getClineConfig(projectRoot),
     getRooCodeConfig(projectRoot),
+    getGeminiConfig(projectRoot),
+    getCodexConfig(projectRoot),
+    getOpenCodeConfig(projectRoot),
   ];
 
   const existingClients = clients.filter((c) => c.exists && c.config);
@@ -122,7 +160,22 @@ function run() {
     }
   }
 
-  const merged = mergeConfigs(existingClients);
+  let merged;
+  if (sourceName) {
+    const sourceClient = existingClients.find((cl) => cl.name === sourceName);
+    if (!sourceClient) {
+      console.error(c("red", `\nSource "${sourceName}" not found in project.`));
+      console.error("Available configs:");
+      for (const client of existingClients) {
+        console.error(c("dim", `  - ${client.name}`));
+      }
+      process.exit(1);
+    }
+    merged = { mcpServers: { ...sourceClient.config!.mcpServers } };
+  } else {
+    merged = mergeConfigs(existingClients);
+  }
+
   const mergedCount = Object.keys(merged.mcpServers).length;
 
   console.log(`\n${c("cyan", "Merged result:")} ${mergedCount} unique server(s)`);
@@ -143,18 +196,37 @@ function run() {
       parts.push(c("red", `-${changes.removed.length}`));
     }
 
-    const changeInfo = parts.length > 0 ? ` (${parts.join(", ")})` : c("dim", " (no changes)");
+    const hasChanges = parts.length > 0;
+    const changeInfo = hasChanges ? ` (${parts.join(", ")})` : "";
+    const status = hasChanges ? c("green", "sync") : c("dim", "skip");
 
-    console.log(`  [${c("green", "sync")}] ${client.name}${changeInfo}`);
+    console.log(`  [${status}] ${client.name}${changeInfo}`);
 
-    if (verbose && changes.added.length > 0) {
+    if (verbose) {
       for (const name of changes.added) {
         console.log(c("green", `      + ${name}`));
       }
+      for (const name of changes.removed) {
+        console.log(c("red", `      - ${name}`));
+      }
     }
 
-    if (!dryRun) {
-      writeFileSync(client.path, JSON.stringify(merged, null, 2) + "\n");
+    if (!dryRun && hasChanges) {
+      const existingContent = readFileSync(client.path, "utf-8");
+      let output: string;
+
+      if (client.name === "Gemini CLI") {
+        const existing = JSON.parse(existingContent);
+        output = JSON.stringify({ ...existing, mcpServers: merged.mcpServers }, null, 2) + "\n";
+      } else if (client.name === "Codex") {
+        output = serializeCodexConfig(merged, existingContent);
+      } else if (client.name === "OpenCode") {
+        output = serializeOpenCodeConfig(merged, existingContent);
+      } else {
+        output = JSON.stringify(merged, null, 2) + "\n";
+      }
+
+      writeFileSync(client.path, output);
     }
   }
 
