@@ -67,6 +67,10 @@ npx -y sync-project-mcps@latest -v
 | **Codex** | `.codex/config.toml` | Project |
 | **OpenCode** | `.opencode/opencode.jsonc` | Project |
 
+### Why not Claude Desktop?
+
+Claude Desktop only supports global configs (`~/Library/Application Support/Claude/claude_desktop_config.json`), not project-level. Use **Claude Code** (the CLI) instead - it supports project-level `.mcp.json`.
+
 ---
 
 ## Installation
@@ -218,7 +222,7 @@ Yes. Environment variables in configs are preserved as-is.
 
 ### What about global vs project configs?
 
-Currently syncs project-level configs. Global config support is planned.
+This tool syncs project-level configs only. Claude Desktop is not supported because it only has global configs.
 
 ---
 
